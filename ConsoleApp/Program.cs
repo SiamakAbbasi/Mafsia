@@ -15,11 +15,13 @@ namespace ConsoleApp
         public static readonly string path = Path.Combine(Directory.GetParent(System.IO.Directory.GetCurrentDirectory()).Parent.FullName, @"phones.txt");
 
         public static List<string> roles = new List<string> { "Godfather", "Mozakere Konande", "Mafiasade1", "Mafiasade2", "Shahrvand", "Karagah", "doktor", "Khabarnegar Oskol" };
-        public static List<string> mafias = new List<string>();
-        public static List<int> MafiaRole = new List<int>();
+
+        public static Dictionary<string, string> dicmafias = new Dictionary<string, string>();
         public static int mafiaCount = 4;
         public static int UserCounter = 0;
         public static int UserLimited = 12;
+        public static List<string> UserRoles = new List<string>();
+        public static Dictionary<string, string> dicroles = new Dictionary<string, string>();
         static void Main(string[] args)
         {
             //https://core.telegram.org/bots/api
@@ -51,7 +53,7 @@ namespace ConsoleApp
         {
             if (!File.Exists(path)) File.Create(path).Close();
 
-            if (File.ReadLines(path).Any(line => line.Contains(chatid)))
+            if (!File.ReadLines(path).Any(line => line.Contains(chatid)))
             {
                 File.AppendAllText(path, chatid);
                 return true;
@@ -80,8 +82,7 @@ namespace ConsoleApp
         {
             try
             {
-                List<string> roles = new List<string>();
-                List<string> players = new List<string>();
+
                 if (e.Message.Type == Telegram.Bot.Types.Enums.MessageType.Text)
                 {
                     string chatid = e.Message.Chat.Id.ToString();
@@ -92,36 +93,62 @@ namespace ConsoleApp
                     if (e.Message.Text.Contains("@"))
                     {
                         UserCounter++;
-                        if (UserCounter>UserLimited)
+                        if (UserCounter > UserLimited)
                         {
                             await bot.SendTextMessageAsync(chatid, string.Format("Sorry Refigh {0} : try for next match .we have no free place for you .. " + e.Message.Text));
 
                         }
                         else
                         {
-                        AddChatIdIfNotExist(e.Message.Chat.Id.ToString() + ";" + e.Message.Text);
-                        await bot.SendTextMessageAsync(chatid, string.Format("user name {0} is submitted" + e.Message.Text));
+                            AddChatIdIfNotExist(e.Message.Chat.Id.ToString() + ";" + e.Message.Text);
+                            await bot.SendTextMessageAsync(chatid, string.Format("user name {0} is submitted", e.Message.Text));
                         }
                     }
 
                     if (e.Message.Text.ToUpper() == "ROLE")
                     {
-                        int randindex = getRandomIndex();
-                        roles.RemoveAt(randindex);
-                        if (randindex >= 0 && randindex <= (mafiaCount - 1))
+                        bool isDuplicate = UserRoles.Contains(chatid);
+
+                        if (!isDuplicate)
                         {
-                            mafias.Add(chatid);
-                            MafiaRole.Add(randindex);
-                            if (mafias.Count == mafiaCount)
+                            int randindex = getRandomIndex();
+                            string role = GetRole(chatid, randindex);
+                            await bot.SendTextMessageAsync(e.Message.Chat.Id, string.Format("role:{0} Lets GO!", role));
+                            if (randindex >= 0 && randindex <= (mafiaCount - 1))
                             {
-                                foreach (var item in mafias)
+                                dicmafias.Add(chatid, role);
+                                if (dicmafias.Count == mafiaCount)
                                 {
-                                    await bot.SendTextMessageAsync(chatid, item);
+                                    foreach (var mafiaChat in dicmafias)
+                                    {
+                                        var mafiaChatId = mafiaChat.Key;
+                                        if (mafiaChatId != chatid)
+                                        {
+
+                                            foreach (var mafiaitem in dicmafias)
+                                            {
+                                                var mafiakey = mafiaitem.Key;
+                                                string mafiastr = dicroles.Where(c => c.Key == mafiakey).FirstOrDefault().Value;
+                                                await bot.SendTextMessageAsync(mafiaChatId, mafiastr + ":" + " in your team as");
+                                            }
+                                        }
+                                    }
                                 }
                             }
+                            UserRoles.Add(chatid);
+                            dicroles.Add(chatid, role);
+                            if (randindex != 4)
+                            {
+                                roles.RemoveAt(randindex);
+                            }
+
                         }
-                        string role = GetRole(chatid, randindex);
-                        await bot.SendTextMessageAsync(e.Message.Chat.Id, "Lets GO!");
+                        else
+                        {
+                            string doubleRole = dicroles.Where(c => c.Key == chatid).FirstOrDefault().Value;
+                            await bot.SendTextMessageAsync(e.Message.Chat.Id, string.Format(e.Message.Chat.Id + "you have got already one role as {0}! ", doubleRole));
+                        }
+
                     }
                     if (e.Message.Text.ToUpper() == "RESET")
                     {
