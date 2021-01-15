@@ -18,6 +18,8 @@ namespace ConsoleApp
         public static List<string> mafias = new List<string>();
         public static List<int> MafiaRole = new List<int>();
         public static int mafiaCount = 4;
+        public static int UserCounter = 0;
+        public static int UserLimited = 12;
         static void Main(string[] args)
         {
             //https://core.telegram.org/bots/api
@@ -49,7 +51,7 @@ namespace ConsoleApp
         {
             if (!File.Exists(path)) File.Create(path).Close();
 
-            if (!File.ReadLines(path).Any(line => line.Contains(chatid)))
+            if (File.ReadLines(path).Any(line => line.Contains(chatid)))
             {
                 File.AppendAllText(path, chatid);
                 return true;
@@ -78,8 +80,6 @@ namespace ConsoleApp
         {
             try
             {
-
-
                 List<string> roles = new List<string>();
                 List<string> players = new List<string>();
                 if (e.Message.Type == Telegram.Bot.Types.Enums.MessageType.Text)
@@ -91,13 +91,23 @@ namespace ConsoleApp
                     //}
                     if (e.Message.Text.Contains("@"))
                     {
+                        UserCounter++;
+                        if (UserCounter>UserLimited)
+                        {
+                            await bot.SendTextMessageAsync(chatid, string.Format("Sorry Refigh {0} : try for next match .we have no free place for you .. " + e.Message.Text));
+
+                        }
+                        else
+                        {
                         AddChatIdIfNotExist(e.Message.Chat.Id.ToString() + ";" + e.Message.Text);
                         await bot.SendTextMessageAsync(chatid, string.Format("user name {0} is submitted" + e.Message.Text));
+                        }
                     }
 
                     if (e.Message.Text.ToUpper() == "ROLE")
                     {
                         int randindex = getRandomIndex();
+                        roles.RemoveAt(randindex);
                         if (randindex >= 0 && randindex <= (mafiaCount - 1))
                         {
                             mafias.Add(chatid);
