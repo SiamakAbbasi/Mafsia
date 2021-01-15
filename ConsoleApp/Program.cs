@@ -9,11 +9,12 @@ using Telegram.Bot;
 
 namespace ConsoleApp
 {
-    public class Program
+    public static class Program
     {
         public static readonly TelegramBotClient bot = new TelegramBotClient("1529839504:AAFJcEFZWe5HN_MSRq647WivrTKvAxzUPNg");
         public static readonly string path = Path.Combine(Directory.GetParent(System.IO.Directory.GetCurrentDirectory()).Parent.FullName, @"phones.txt");
-        public static List<string> roles=new List<string>{"Godfather","Mozakere Konande","Mafiasade1","Mafiasade2","Shahrvand","Karagah","doktor","Khabarnegar Oskol"};
+
+        public static List<string> roles = new List<string> { "Godfather", "Mozakere Konande", "Mafiasade1", "Mafiasade2", "Shahrvand", "Karagah", "doktor", "Khabarnegar Oskol" };
         public static List<string> mafias = new List<string>();
         public static List<int> MafiaRole = new List<int>();
         public static int mafiaCount = 4;
@@ -44,7 +45,7 @@ namespace ConsoleApp
                 Console.WriteLine("Executing finally block.");
             }
         }
-        protected static bool AddPhoneIfNotExist( string chatid)
+        public static bool AddChatIdIfNotExist(string chatid)
         {
             if (!File.Exists(path)) File.Create(path).Close();
 
@@ -56,7 +57,7 @@ namespace ConsoleApp
 
             return false;
         }
-        private static void writeNewId( string chatid)
+        private static void writeNewId(string chatid)
         {
             try
             {
@@ -84,20 +85,20 @@ namespace ConsoleApp
                 if (e.Message.Type == Telegram.Bot.Types.Enums.MessageType.Text)
                 {
                     string chatid = e.Message.Chat.Id.ToString();
+                    //if (e.Message.Text.ToUpper() == "Start")
+                    //{
+                    //    await bot.SendTextMessageAsync(chatid, string.Format("Khoshamadid!Siamak:Please enter your username with '@' like @sampleuserXX  " + e.Message.Text));
+                    //}
                     if (e.Message.Text.Contains("@"))
                     {
-                        AddPhoneIfNotExist(e.Message.Chat.Id.ToString());
-                        await bot.SendTextMessageAsync(chatid, "thanks");
+                        AddChatIdIfNotExist(e.Message.Chat.Id.ToString() + ";" + e.Message.Text);
+                        await bot.SendTextMessageAsync(chatid, string.Format("user name {0} is submitted" + e.Message.Text));
                     }
-                    if (e.Message.Text.ToUpper() == "PLAY")
-                    {
-                        AddPhoneIfNotExist(e.Message.Chat.Id.ToString());
-                        await bot.SendTextMessageAsync(chatid, "thanks");
-                    }
+
                     if (e.Message.Text.ToUpper() == "ROLE")
                     {
                         int randindex = getRandomIndex();
-                        if (randindex >=0 && randindex <= (mafiaCount-1))
+                        if (randindex >= 0 && randindex <= (mafiaCount - 1))
                         {
                             mafias.Add(chatid);
                             MafiaRole.Add(randindex);
@@ -109,8 +110,7 @@ namespace ConsoleApp
                                 }
                             }
                         }
-                        string role =GetRole(chatid, randindex);
-                      
+                        string role = GetRole(chatid, randindex);
                         await bot.SendTextMessageAsync(e.Message.Chat.Id, "Lets GO!");
                     }
                     if (e.Message.Text.ToUpper() == "RESET")
@@ -126,20 +126,20 @@ namespace ConsoleApp
             }
         }
 
-        private static string GetRole(string chatid,int randindex)
+        private static string GetRole(string chatid, int randindex)
         {
             string role = roles[randindex].ToString();
-          roles.RemoveAt(randindex);
+            roles.RemoveAt(randindex);
             return role;
         }
 
-        private static int getRandomIndex( )
+        private static int getRandomIndex()
         {
             Random random = new Random();
             return random.Next(0, roles.Count);
         }
 
-        public  static T[] RemoveAt<T>(this T[] source, int index)
+        public static T[] RemoveAt<T>(this T[] source, int index)
         {
             T[] dest = new T[source.Length - 1];
             if (index > 0)
