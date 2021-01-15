@@ -9,13 +9,14 @@ using Telegram.Bot;
 
 namespace ConsoleApp
 {
-    class Program
+    public class Program
     {
         public static readonly TelegramBotClient bot = new TelegramBotClient("1529839504:AAFJcEFZWe5HN_MSRq647WivrTKvAxzUPNg");
         public static readonly string path = Path.Combine(Directory.GetParent(System.IO.Directory.GetCurrentDirectory()).Parent.FullName, @"phones.txt");
-        public static readonly string[] roles={"Godfather","Mozakere Konande","Mafiasade1","Mafiasade2","Shahrvand"};
-
-
+        public static List<string> roles=new List<string>{"Godfather","Mozakere Konande","Mafiasade1","Mafiasade2","Shahrvand","Karagah","doktor","Khabarnegar Oskol"};
+        public static List<string> mafias = new List<string>();
+        public static List<int> MafiaRole = new List<int>();
+        public static int mafiaCount = 4;
         static void Main(string[] args)
         {
             //https://core.telegram.org/bots/api
@@ -82,15 +83,35 @@ namespace ConsoleApp
                 List<string> players = new List<string>();
                 if (e.Message.Type == Telegram.Bot.Types.Enums.MessageType.Text)
                 {
-             
+                    string chatid = e.Message.Chat.Id.ToString();
+                    if (e.Message.Text.Contains("@"))
+                    {
+                        AddPhoneIfNotExist(e.Message.Chat.Id.ToString());
+                        await bot.SendTextMessageAsync(chatid, "thanks");
+                    }
                     if (e.Message.Text.ToUpper() == "PLAY")
                     {
                         AddPhoneIfNotExist(e.Message.Chat.Id.ToString());
-                        await bot.SendTextMessageAsync(e.Message.Chat.Id, "thanks");
+                        await bot.SendTextMessageAsync(chatid, "thanks");
                     }
                     if (e.Message.Text.ToUpper() == "ROLE")
                     {
-                        await bot.SendTextMessageAsync(e.Message.Chat.Id, "Test Bot: Godfather");
+                        int randindex = getRandomIndex();
+                        if (randindex >=0 && randindex <= (mafiaCount-1))
+                        {
+                            mafias.Add(chatid);
+                            MafiaRole.Add(randindex);
+                            if (mafias.Count == mafiaCount)
+                            {
+                                foreach (var item in mafias)
+                                {
+                                    await bot.SendTextMessageAsync(chatid, item);
+                                }
+                            }
+                        }
+                        string role =GetRole(chatid, randindex);
+                      
+                        await bot.SendTextMessageAsync(e.Message.Chat.Id, "Lets GO!");
                     }
                     if (e.Message.Text.ToUpper() == "RESET")
                     {
@@ -105,5 +126,29 @@ namespace ConsoleApp
             }
         }
 
+        private static string GetRole(string chatid,int randindex)
+        {
+            string role = roles[randindex].ToString();
+          roles.RemoveAt(randindex);
+            return role;
+        }
+
+        private static int getRandomIndex( )
+        {
+            Random random = new Random();
+            return random.Next(0, roles.Count);
+        }
+
+        public  static T[] RemoveAt<T>(this T[] source, int index)
+        {
+            T[] dest = new T[source.Length - 1];
+            if (index > 0)
+                Array.Copy(source, 0, dest, 0, index);
+
+            if (index < source.Length - 1)
+                Array.Copy(source, index + 1, dest, index, source.Length - index - 1);
+
+            return dest;
+        }
     }
 }
